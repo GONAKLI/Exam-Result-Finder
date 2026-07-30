@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Result Card Generator — KUK Format</title>
+<style>
+  :root{
+    --ink:#1c1c1c;
+    --paper:#fdfcf8;
+    --rule:#c9a24b;
+    --panel:#f2efe6;
+    --accent:#7a2e2e;
+    --muted:#6b6b63;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    background: #e9e5da;
+    color: var(--ink);
+    padding: 24px;
+  }
+  .wrap{
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 24px;
+  }
+  @media (max-width: 900px){
+    .wrap{grid-template-columns: 1fr;}
+  }
+  .input-panel{
+    background: var(--panel);
+    border: 1px solid #d8d2bf;
+    border-radius: 6px;
+    padding: 18px;
+    height: fit-content;
+    position: sticky;
+    top: 24px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+  }
+  .input-panel h1{
+    font-family: Georgia, serif;
+    font-size: 18px;
+    margin: 0 0 4px 0;
+    color: var(--accent);
+  }
+  .input-panel p.sub{
+    font-size: 12px;
+    color: var(--muted);
+    margin: 0 0 14px 0;
+    line-height: 1.5;
+  }
+  textarea{
+    width: 100%;
+    height: 340px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 12px;
+    border: 1px solid #cdc6ac;
+    border-radius: 4px;
+    padding: 10px;
+    resize: vertical;
+    background: #fffef9;
+  }
+  .btn-row{
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  button{
+    font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 13px;
+    padding: 9px 16px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  #generateBtn{
+    background: var(--accent);
+    color: #fff;
+    flex: 1;
+  }
+  #generateBtn:hover{ background:#601f1f; }
+  #sampleBtn{
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+  }
+  #sampleBtn:hover{ background: #efe4e4; }
+  #errorMsg{
+    margin-top: 10px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 12px;
+    color: #8a1f1f;
+    display:none;
+  }
+  .output-panel{
+    background: var(--paper);
+    border: 1px solid #d8d2bf;
+    border-radius: 6px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+  }
+  #placeholder{
+    padding: 60px 30px;
+    text-align:center;
+    color: var(--muted);
+    font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+  #card{
+    display:none;
+    padding: 28px 34px;
+  }
+  .card-header{
+    text-align: center;
+    border-bottom: 2px solid var(--rule);
+    padding-bottom: 10px;
+    margin-bottom: 14px;
+  }
+  .uni-name{
+    font-size: 24px;
+    font-weight: bold;
+    color: var(--accent);
+    margin: 4px 0 2px 0;
+  }
+  .uni-sub{
+    font-size: 11px;
+    color: var(--muted);
+    margin: 1px 0;
+  }
+  .institute-name{
+    font-size: 13px;
+    margin-top: 6px;
+    font-style: italic;
+  }
+  .card-title{
+    text-align:center;
+    margin: 16px 0 4px 0;
+  }
+  .card-title .rgc{
+    font-size: 16px;
+    font-weight: bold;
+    text-decoration: underline;
+  }
+  .card-title .degree{
+    font-size: 15px;
+    font-weight: bold;
+    margin-top: 4px;
+  }
+  .card-title .exam{
+    font-size: 12px;
+    margin-top: 4px;
+  }
+  table.meta{
+    width: 100%;
+    border-collapse: collapse;
+    margin: 18px 0 10px 0;
+    font-size: 13px;
+  }
+  table.meta td{
+    padding: 3px 4px;
+    vertical-align: top;
+  }
+  table.meta td.label{
+    font-weight: bold;
+    width: 15%;
+    white-space: nowrap;
+  }
+  table.meta td.colon{
+    width: 2%;
+  }
+  table.results{
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 14px;
+    font-size: 12.5px;
+  }
+  table.results th, table.results td{
+    border: 1px solid #999;
+    padding: 6px 8px;
+  }
+  table.results thead th{
+    background: var(--panel);
+    text-align: center;
+    font-size: 12px;
+  }
+  table.results td.code{ white-space: nowrap; }
+  table.results td.num{ text-align:center; }
+  table.results td.point{ text-align:right; }
+  table.results tfoot td{
+    font-weight: bold;
+    background: #fbf8f0;
+  }
+  .status-row td{
+    text-align:left;
+  }
+  .summary-row{
+    display:flex;
+    justify-content: space-between;
+    font-size: 13px;
+    margin-top: 14px;
+    padding: 8px 4px;
+    border-top: 1px solid #ccc;
+  }
+  .abbr{
+    font-size: 11px;
+    color: var(--muted);
+    display:flex;
+    justify-content: space-between;
+    margin-top: 10px;
+  }
+  .footer-note{
+    display:flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-top: 20px;
+    font-size: 11px;
+    color: var(--muted);
+    border-top: 1px dashed #ccc;
+    padding-top: 10px;
+  }
+  .grade-pass{ color: #1a6e1a; font-weight:bold; }
+  .grade-fail{ color: #a11; font-weight:bold; }
+  #printBtn{
+    background: var(--accent);
+    color:#fff;
+    margin: 16px 34px 0 34px;
+  }
+  @media print{
+    body{ background:#fff; padding:0; }
+    .input-panel, #printBtn, #placeholder{ display:none !important; }
+    .wrap{ grid-template-columns: 1fr; }
+    .output-panel{ box-shadow:none; border:none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <div class="input-panel">
+    <h1>Result Card Generator</h1>
+    <p class="sub">Apna student result vala JSON neeche paste karein aur "Generate" dabayein. Yeh use Kurukshetra University ke official Result-cum-Grade Card format mein render kar dega.</p>
+    <textarea id="jsonInput" placeholder="Yahan apna JSON paste karein..."></textarea>
+    <div class="btn-row">
+      <button id="generateBtn">Generate Result Card</button>
+      <button id="sampleBtn">Load Sample</button>
+    </div>
+    <div id="errorMsg"></div>
+  </div>
+
+  <div class="output-panel">
+    <div id="placeholder">Result card yahan dikhega.<br>Bayein taraf JSON paste karke "Generate Result Card" dabayein.</div>
+    <div id="card"></div>
+    <button id="printBtn" style="display:none;">Print / Save as PDF</button>
+  </div>
+
+</div>
+
+<script>
+const SAMPLE = {
+  "studentRegistraionId": 1923426,
+  "studentName": "AAKASH",
+  "fatherName": "AJAY SINGH",
+  "motherName": "CHARANJEET",
+  "student_registration_number": "24-BAGK-227",
+  "examRollNo": "2024247101",
+  "degreeName": " Bachelor of Computer Application (Semester-I)",
+  "examScheduleName": "Dec-2024",
+  "instituteName": "Dr.B.R.Ambedkar Govt. College, Kaithal",
+  "semester": "I",
+  "studentSubjectResultArray": [
+    {"subject_code":"B23-AEC-E111","subject_name":"English Language and Communication: Level-1","grade_letter":"A","credit_grade_point":"16.00","subject_credit":2,"subject_result":"P"},
+    {"subject_code":"B23-CAP-101","subject_name":"Problem Solving Through C","grade_letter":"B","credit_grade_point":"24.00","subject_credit":4,"subject_result":"P"},
+    {"subject_code":"B23-CAP-102","subject_name":"Foundations of Computer Science","grade_letter":"O","credit_grade_point":"40.00","subject_credit":4,"subject_result":"P"},
+    {"subject_code":"B23-CAP-103","subject_name":"Logical Organization of Computer","grade_letter":"A+","credit_grade_point":"36.00","subject_credit":4,"subject_result":"P"},
+    {"subject_code":"B23-CAP-104","subject_name":"Mathematical Foundations for Computer Science-I","grade_letter":"A","credit_grade_point":"16.00","subject_credit":2,"subject_result":"P"},
+    {"subject_code":"B23-JMC-105","subject_name":"Public Speaking and Art of Anchoring","grade_letter":"O","credit_grade_point":"30.00","subject_credit":3,"subject_result":"P"},
+    {"subject_code":"B23-SEC-103","subject_name":"Basic IT Tools","grade_letter":"O","credit_grade_point":"30.00","subject_credit":3,"subject_result":"P"},
+    {"subject_code":"B23-VAC-101","subject_name":"Human Values and Ethics","grade_letter":"A","credit_grade_point":"16.00","subject_credit":2,"subject_result":"P"}
+  ],
+  "studentSemesterArray": [
+    {"grade_letter":"A","sgpa":"8.67","cgpa":"8.67","total_subject_credit":24,"semester_result":"Pass","dmcNo":"412107","result_Date":"Jun 06, 2025"}
+  ]
+};
+
+const $ = (id) => document.getElementById(id);
+
+function esc(v){
+  if(v === undefined || v === null) return '';
+  return String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function buildCard(data){
+  const subjects = data.studentSubjectResultArray || [];
+  const sem = (data.studentSemesterArray && data.studentSemesterArray[0]) || {};
+
+  const failed = subjects.filter(s => (s.subject_result || '').toUpperCase() !== 'P');
+  const statusText = failed.length === 0
+    ? 'Pass'
+    : 'Re-appear in ' + failed.map(s => esc(s.subject_code)).join(', ') + ' (As per ordinance)';
+
+  const totalCredits = sem.total_subject_credit !== undefined
+    ? sem.total_subject_credit
+    : subjects.reduce((sum, s) => sum + (Number(s.subject_credit) || 0), 0);
+
+  const rows = subjects.map(s => {
+    const isFail = (s.subject_result || '').toUpperCase() !== 'P';
+    const resultDisplay = isFail ? 'Re' : 'P';
+    const resultClass = isFail ? 'grade-fail' : 'grade-pass';
+    return `<tr>
+      <td class="code">${esc(s.subject_code)}</td>
+      <td>${esc(s.subject_name)}</td>
+      <td class="num">${esc(s.subject_credit)}</td>
+      <td class="num">${esc(s.grade_letter)}</td>
+      <td class="point">${esc(s.credit_grade_point)}</td>
+      <td class="num ${resultClass}">${resultDisplay}</td>
+    </tr>`;
+  }).join('');
+
+  const degreeName = (data.degreeName || '').trim();
+  const examName = data.examScheduleName || '';
+  const instituteName = data.instituteName || '';
+
+  return `
+    <div class="card-header">
+      <div class="uni-name">Kurukshetra University Kurukshetra</div>
+      <div class="uni-sub">(Established by the State Legislature Act XII of 1956)</div>
+      <div class="uni-sub">(A++ Grade, NAAC Accredited)</div>
+      ${instituteName ? `<div class="institute-name">${esc(instituteName)}</div>` : ''}
+    </div>
+
+    <div class="card-title">
+      <div class="rgc">Result-cum-Grade Card</div>
+      <div class="degree">${esc(degreeName)}</div>
+      <div class="exam">Examination: ${esc(examName)}</div>
+    </div>
+
+    <table class="meta">
+      <tr>
+        <td class="label">Student's Name</td><td class="colon">:</td><td>${esc(data.studentName)}</td>
+        <td class="label">DMC No.</td><td class="colon">:</td><td>${esc(sem.dmcNo)}</td>
+      </tr>
+      <tr>
+        <td class="label">Father's Name</td><td class="colon">:</td><td>${esc(data.fatherName)}</td>
+        <td class="label">Roll No.</td><td class="colon">:</td><td>${esc(data.examRollNo)}</td>
+      </tr>
+      <tr>
+        <td class="label">Mother's Name</td><td class="colon">:</td><td>${esc(data.motherName)}</td>
+        <td class="label">Regn No.</td><td class="colon">:</td><td>${esc(data.student_registration_number)}</td>
+      </tr>
+    </table>
+
+    <table class="results">
+      <thead>
+        <tr>
+          <th>Course Code</th>
+          <th>Course Name</th>
+          <th>Credits</th>
+          <th>Grade</th>
+          <th>Credit Point</th>
+          <th>Course Result</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows}
+      </tbody>
+      <tfoot>
+        <tr class="status-row">
+          <td colspan="2">Result Status: ${esc(statusText)}</td>
+          <td class="num">${esc(totalCredits)}</td>
+          <td colspan="3"></td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div class="summary-row">
+      <span><b>SGPA:</b> ${esc(sem.sgpa)}</span>
+      <span><b>CGPA:</b> ${esc(sem.cgpa)}</span>
+      <span><b>Result:</b> ${esc(sem.semester_result)}</span>
+    </div>
+
+    <div class="abbr">
+      <span><b>SGPA</b> — Semester Grade Point Average</span>
+      <span><b>CGPA</b> — Cumulative Grade Point Average</span>
+    </div>
+
+    <div class="footer-note">
+      <span>Result Declaration Date: ${esc(sem.result_Date)}</span>
+      <span>System Generated — No Signature Required</span>
+    </div>
+  `;
+}
+
+function generate(){
+  const raw = $('jsonInput').value.trim();
+  const errorBox = $('errorMsg');
+  errorBox.style.display = 'none';
+
+  if(!raw){
+    errorBox.textContent = 'Pehle JSON paste karein.';
+    errorBox.style.display = 'block';
+    return;
+  }
+
+  let data;
+  try{
+    data = JSON.parse(raw);
+  }catch(e){
+    errorBox.textContent = 'JSON parse nahi ho paaya. Format check karein: ' + e.message;
+    errorBox.style.display = 'block';
+    return;
+  }
+
+  if(!data.studentSubjectResultArray){
+    errorBox.textContent = 'JSON mein "studentSubjectResultArray" nahi mila. Sahi student result JSON paste karein.';
+    errorBox.style.display = 'block';
+    return;
+  }
+
+  $('placeholder').style.display = 'none';
+  const card = $('card');
+  card.style.display = 'block';
+  card.innerHTML = buildCard(data);
+  $('printBtn').style.display = 'inline-block';
+}
+
+$('generateBtn').addEventListener('click', generate);
+$('sampleBtn').addEventListener('click', () => {
+  $('jsonInput').value = JSON.stringify(SAMPLE, null, 2);
+  generate();
+});
+$('printBtn').addEventListener('click', () => window.print());
+</script>
+
+</body>
+</html>
